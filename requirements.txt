@@ -1,0 +1,6 @@
+psutil
+aiogram
+python_dotenv
+loguru
+pydantic-settings
+pydantic

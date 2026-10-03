@@ -1,0 +1,27 @@
+[project]
+name = "pc-monitoring-bot"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Shurik", email = "sanya.kucheryavvkh@bk.ru" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "aiogram>=3.31.0",
+    "loguru>=0.7.3",
+    "mypy>=2.4.0",
+    "psutil>=7.2.2",
+    "pydantic>=2.13.5",
+    "pydantic-settings>=2.15.0",
+    "pytest-cov>=7.1.0",
+    "python-dotenv>=1.2.4",
+    "ruff>=0.16.10",
+]
+
+[project.scripts]
+pc-monitoring-bot = "pc_monitoring_bot:main"
+
+[build-system]
+requires = ["uv_build>=0.12.19,<0.13.0"]
+build-backend = "uv_build"
