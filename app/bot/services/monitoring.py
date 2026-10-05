@@ -1,5 +1,6 @@
 import asyncio
 import time
+from typing import Any
 
 import httpx
 import psutil
@@ -7,25 +8,34 @@ from loguru import logger
 
 
 class ProcessorMonitoring:
-    async def get_data_processor(self, node: dict, sensor_id: str) -> str:
+    async def get_data_processor(
+           self,
+           node: dict[str, str | int],
+           sensor_id: str
+    ) -> str:
         data = await asyncio.to_thread(self._fetch_data_processor, node, sensor_id)
         return self._formatter_data(data)
 
     def _find_sensor(
-        self, node: dict[str, str | int | float], sensor_id: str
-    ) -> dict[str, str | int | float] | None:
+        self, node: dict[str, str | int], sensor_id: str
+    ) -> dict[str, str | int] | None:
         if node.get("SensorId") == sensor_id:
             return node
 
-        for child in node.get("Children", []):
-            result = self._find_sensor(child, sensor_id)
-            if result is not None:
-                return result
+        children = node.get("Children", [])
+        if isinstance(children, list):
+            for child in node.get("Children", []):
+                result = self._find_sensor(child, sensor_id)
+                if result is not None:
+                    return result
 
         return None
 
     def _fetch_data_processor(
-        self, node: dict, sensor_id: str, interval: int = 1
+        self,
+        node: dict[str, int | str],
+        sensor_id: str,
+        interval: int = 1
     ) -> dict[str, str | int]:
         time.sleep(interval)
         workload2 = psutil.cpu_percent()
@@ -42,17 +52,17 @@ class ProcessorMonitoring:
         if temperature_node is None:
             temperature = "Неопределена"
         else:
-            temperature = temperature_node["Value"].replace(",", ".").split()[0]
+            temperature = str(temperature_node["Value"]).replace(",", ".").split()[0]
 
         return {
             "cpu_percent": f"{workload2}%",
-            "cores_physical": count_cores,
+            "cores_physical": count_cores or 0,
             "cores_logical": count_logical_cores,
             "freq_current": f"{freq_avg:.0f}MGz",
             "temperature": temperature,
         }
 
-    def _formatter_data(self, data: dict[str, str | int | float]) -> str:
+    def _formatter_data(self, data: dict[str, str | int]) -> str:
         lines = ""
 
         if data.get("temperature") == "Неопределена":
@@ -134,7 +144,7 @@ class Disk:
 
 
 class Network:
-    async def get_info_network(self) -> dict:
+    async def get_info_network(self) -> str:
         return await asyncio.to_thread(self._formatter_data)
 
     def _fetch_data_network(self, interval: int = 10) -> dict[str, int | float]:
@@ -194,7 +204,7 @@ class Network:
         return lines
 
 
-async def send_request(client: httpx.AsyncClient, method: str, url: str) -> dict:
+async def send_request(client: httpx.AsyncClient, method: str, url: str) -> dict[Any, Any]:
     response = await client.request(method, url)
     response.raise_for_status()
     return response.json()
