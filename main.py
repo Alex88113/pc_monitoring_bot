@@ -1,32 +1,30 @@
 import asyncio
+from datetime import datetime
 
-import httpx
+from aiogram import Bot
+from loguru import logger
 
-async def send_request(client: httpx.AsyncClient, method: str, url: str):
-    response = await client.request(method, url)
-    return response.json()
+from app.bot.configs.bot_config import settings
+from app.bot.handlers.commands import dp
 
-def find_sensor(node: dict, sensor_id: str):
-    if node.get("SensorId") == sensor_id:
-        return node
-
-    for child in node.get("Children", []):
-        result = find_sensor(child, sensor_id)
-        if result is not None:
-            return result
-
-    return None
 
 async def main() -> None:
-    url: str = 'http://localhost:8085/data.json'
+    token = settings.get_token_bot()
+    bot = Bot(token=token)
 
-    async with httpx.AsyncClient() as client:
-        result_send = await send_request(client, "GET", url)
-        root = result_send
-        node = find_sensor(root, "/intelcpu/0/temperature/8")
-        if node:
-            temperature = node.get('Value').replace(",", ".").split()[0]
-            print(f"Температура CPU: {temperature}°C")
+    logger.info(f"Бот запущен в {datetime.now()}")
+    try:
+        await dp.start_polling(bot)
+    finally:
+        logger.info(f"Бот остановлен в {datetime.now()}")
+
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except ValueError as error:
+        logger.error(f'В ходе выполнения программы возникла ошибка: {error}')
+        raise
+    except Exception as error:
+        logger.error(f'В ходе выполнения программы произошла непредвиденная ошибка: {error}')
+        raise

@@ -62,18 +62,24 @@ class ProcessorMonitoring:
         }
 
     def _formatter_data(self, data: dict[str, str | int]) -> str:
-        lines = ""
+        lines = ["━━━━━━━━━━━━━━━━━━━━━━━━━"]
+        lines.append("🖥️  ПРОЦЕССОР")
+        lines.append("━━━━━━━━━━━━━━━━━━━━━━━━━")
 
-        if data.get("temperature") == "Неопределена":
-            lines += "Температура недоступна"
+        lines.append(f"⚡ Загруженность CPU: {data.get('cpu_percent')}")
+        lines.append(f"🧩 Физических ядер: {data.get('cores_physical')}")
+        lines.append(f"🧵 Логических ядер: {data.get('cores_logical')}")
+        lines.append(f"📊 Частота: {data.get('freq_current')}")
+
+        temp = data.get("temperature")
+        if temp == "Неопределена":
+            lines.append("🌡️ Температура: недоступна")
         else:
-            lines += f"Загруженность CPU: {data.get('cpu_percent')}\n"
-            lines += f"Количество физических ядер: {data.get('cores_physical')}\n"
-            lines += f"Количество логических ядер: {data.get('cores_logical')}\n"
-            lines += f"Текущая частота работы процессора = {data.get('freq_current')}\n"
-            lines += f"Температура процессора: {data.get('temperature')}°C"
+            lines.append(f"🌡️ Температура: {temp}°C")
 
-        return lines
+        lines.append("━━━━━━━━━━━━━━━━━━━━━━━━━")
+        lines.append("")
+        return "\n".join(lines)
 
 
 class Memory:
@@ -91,13 +97,18 @@ class Memory:
 
     def _formatted_data_memory(self) -> str:
         data = self._fetch_data_memory()
-        lines = "--------------------------------\n"
-        lines += f"Всего: {data.get('Всего')}\n"
-        lines += f"Свободно: {data.get('Свободно')}\n"
-        lines += f"Используется: {data.get('Используется')}\n"
-        lines += f"Процент использования = {data.get('Процент использования')}\n"
-        lines += "--------------------------------\n"
-        return lines
+
+        lines = ["━━━━━━━━━━━━━━━━━━━━━━━━━"]
+        lines.append("💾  ПАМЯТЬ")
+        lines.append("━━━━━━━━━━━━━━━━━━━━━━━━━")
+
+        lines.append(f"📦 Всего: {data.get('Всего')}")
+        lines.append(f"📥 Используется: {data.get('Используется')}")
+        lines.append(f"📤 Свободно: {data.get('Свободно')}")
+        lines.append(f"📊 Загрузка: {data.get('Процент использования')}")
+
+        lines.append("━━━━━━━━━━━━━━━━━━━━━━━━━")
+        return "\n".join(lines)
 
 
 class Disk:
@@ -106,15 +117,24 @@ class Disk:
         return self._formatter_info_disk(data)
 
     def _formatter_info_disk(self, data_disk: list[dict[str, str]]) -> str:
-        lines = ["-----------------------------"]
-        for value in data_disk:
-            lines.append(f"Точка монтирования: {value['mountpoint']}")
-            lines.append(f"Общий объём диска: {value['Общий объём диска']}")
-            lines.append(f"Свободно: {value['Свободно']}")
-            lines.append(f"Занято {value['Занято']}")
-            lines.append(f"Используется: {value['Используется']}")
-        lines.append("----------------------------")
+        if not data_disk:
+            return "❌ Диски не найдены"
 
+        lines = ["━━━━━━━━━━━━━━━━━━━━━━━━━"]
+        lines.append("💿  ДИСКИ")
+        lines.append("━━━━━━━━━━━━━━━━━━━━━━━━━")
+
+        for i, value in enumerate(data_disk, start=1):
+            lines.append(f"📁 Раздел #{i}: {value['mountpoint']}")
+            lines.append(f"💠 Объём: {value['Общий объём диска']}")
+            lines.append(f"📥 Используется: {value['Используется']}")
+            lines.append(f"📤 Свободно: {value['Свободно']}")
+            lines.append(f"📊 Занято: {value['Занято']}")
+
+            if i < len(data_disk):
+                lines.append("━━━━━━━━━━━━━━━━━━━━━━━━━")
+
+        lines.append("━━━━━━━━━━━━━━━━━━━━━━━━━")
         return "\n".join(lines)
 
     def _fetch_data_about_disk(self) -> list[dict[str, str]]:
@@ -190,17 +210,43 @@ class Network:
 
     def _formatter_data(self) -> str:
         data = self._fetch_data_network()
-        lines = "----------------------------------\n"
-        lines += f"Отправленные байты = {data.get('bytes_sent')}\n"
-        lines += f"Полученные байты = {data.get('bytes_recv')}\n"
-        lines += f"Скорость отправленных данных: {data.get('speed_sent')}\n"
-        lines += f"Скорость полученных данных = {data.get('speed_recv')}\n"
-        lines += f"Время отправленных пакето: {data.get('packets_sent')}\n"
-        lines += f"Время прихода данных = {data.get('packets_recv')}\n"
-        lines += f"speed_packets_sent: {data.get('speed_packets_sent')}\n"
-        lines += f"speed_packets_recv: {data.get('speed_packets_recv')}\n"
-        lines += "----------------------------------\n"
-        return lines
+
+        bytes_sent = self._human_bytes(data.get("bytes_sent", 0))
+        bytes_recv = self._human_bytes(data.get("bytes_recv", 0))
+        speed_sent = self._human_speed(data.get("speed_sent", 0))
+        speed_recv = self._human_speed(data.get("speed_recv", 0))
+        packets_sent = data.get("packets_sent", 0)
+        packets_recv = data.get("packets_recv", 0)
+
+        lines = ["━━━━━━━━━━━━━━━━━━━━━━━━━"]
+        lines.append("🌐  СЕТЬ")
+        lines.append("━━━━━━━━━━━━━━━━━━━━━━━━━")
+
+        lines.append(f"📤 Отправлено: {bytes_sent}")
+        lines.append(f"📥 Получено: {bytes_recv}")
+        lines.append(f"⬆️ Скорость ↑: {speed_sent}")
+        lines.append(f"⬇️ Скорость ↓: {speed_recv}")
+        lines.append(f"📦 Пакетов отправлено: {packets_sent}")
+        lines.append(f"📦 Пакетов получено: {packets_recv}")
+
+        lines.append("━━━━━━━━━━━━━━━━━━━━━━━━━")
+        return "\n".join(lines)
+
+    @staticmethod
+    def _human_bytes(num: int | float) -> str:
+        for unit in ("Б", "КБ", "МБ", "ГБ", "ТБ"):
+            if abs(num) < 1024.0:
+                return f"{num:.2f} {unit}"
+            num /= 1024.0
+        return f"{num:.2f} ПБ"
+
+    @staticmethod
+    def _human_speed(num: int | float) -> str:
+        for unit in ("Б/с", "КБ/с", "МБ/с", "ГБ/с"):
+            if abs(num) < 1024.0:
+                return f"{num:.2f} {unit}"
+            num /= 1024.0
+        return f"{num:.2f} ТБ/с"
 
 
 async def send_request(client: httpx.AsyncClient, method: str, url: str) -> dict[str, Any]:
