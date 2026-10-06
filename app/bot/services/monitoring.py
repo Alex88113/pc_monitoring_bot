@@ -1,6 +1,6 @@
 import asyncio
 import time
-from typing import Any
+from typing import cast, Any
 
 import httpx
 import psutil
@@ -22,12 +22,11 @@ class ProcessorMonitoring:
         if node.get("SensorId") == sensor_id:
             return node
 
-        children = node.get("Children", [])
-        if isinstance(children, list):
-            for child in node.get("Children", []):
-                result = self._find_sensor(child, sensor_id)
-                if result is not None:
-                    return result
+        children = cast(list[dict[str, str | int]], node.get("Children", []))
+        for child in children:
+            result = self._find_sensor(child, sensor_id)
+            if result is not None:
+                return result
 
         return None
 
@@ -204,7 +203,7 @@ class Network:
         return lines
 
 
-async def send_request(client: httpx.AsyncClient, method: str, url: str) -> dict[Any, Any]:
+async def send_request(client: httpx.AsyncClient, method: str, url: str) -> dict[str, Any]:
     response = await client.request(method, url)
     response.raise_for_status()
-    return response.json()
+    return cast(dict[str, Any], response.json())
