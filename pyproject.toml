@@ -69,5 +69,5 @@ warn_no_return = true
 warn_unreachable = true
 
 [[tool.mypy.overrides]]
-module = ["psutil.*", "wmi.*", "httpx.*"]
+module = ["psutil.*", "httpx.*"]
 ignore_missing_imports = true
